@@ -1,6 +1,7 @@
 import {BrowserRouter, Routes, Route} from 'react-router-dom';
 import Home from './pages/Home';
 import Tours from './pages/Tours';
+import HotTours from './pages/HotTours';
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/tours" element={<Tours />} />
+            <Route path="/hot-tours" element={<HotTours />} />{' '}
+            {/* ← ЭТА СТРОКА */}
           </Routes>
         </main>
 
