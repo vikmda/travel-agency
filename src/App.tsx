@@ -3,6 +3,9 @@ import Home from './pages/Home';
 import Tours from './pages/Tours';
 import HotTours from './pages/HotTours';
 import {FaPhone, FaMapMarkerAlt} from 'react-icons/fa';
+import AdminLogin from './pages/admin/Login';
+import AdminDashboard from './pages/admin/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -73,10 +76,32 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/tours" element={<Tours />} />
             <Route path="/hot-tours" element={<HotTours />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
         <footer className="bg-gray-800 text-white text-center py-6 mt-12">
-          <p>© {new Date().getFullYear()} Royal Tour. Все права защищены.</p>
+          <p>
+            <button
+              onClick={() => {
+                const isAdmin = window.location.pathname.startsWith('/admin');
+                if (!isAdmin) {
+                  window.location.href = '/admin/login';
+                }
+              }}
+              className="text-white hover:underline focus:outline-none"
+              aria-label="Админка"
+            >
+              © {new Date().getFullYear()} Royal Tour. Все права защищены.
+            </button>
+          </p>
         </footer>
       </div>
     </BrowserRouter>

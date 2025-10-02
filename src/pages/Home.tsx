@@ -26,6 +26,22 @@ export default function Home() {
 
     const nextIndex = (currentIndex + 1) % videos.length;
     localStorage.setItem('currentVideoIndex', nextIndex.toString());
+
+    const sendVisit = async () => {
+      const country =
+        Intl.DateTimeFormat().resolvedOptions().timeZone?.split('/')[0] ||
+        'Unknown';
+      const referrer = document.referrer || 'direct';
+      const userAgent = navigator.userAgent;
+
+      await fetch('/api/visit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({country, referrer, userAgent}),
+      });
+    };
+
+    sendVisit();
   }, []);
 
   return (
