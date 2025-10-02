@@ -1,9 +1,12 @@
 export interface Tour {
-  id: string; // uuid приходит как строка
+  id: string;
   title: string;
   country: string;
   price: number;
-  startDate: string; // пока фиксированная дата
-  duration: number; // пока фиксировано
+  startDate: string;
+  duration: number;
   description: string;
+  images?: string[];
+  cover_image?: string;
+  expires_at?: string | null;
 }

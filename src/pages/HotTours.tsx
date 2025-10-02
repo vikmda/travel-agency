@@ -9,10 +9,14 @@ export default function HotTours() {
 
   useEffect(() => {
     const fetchHotTours = async () => {
+      const today = new Date().toISOString();
+
       const {data, error} = await supabase
         .from('hot_tours')
         .select('*')
-        .eq('is_hot', true);
+        .eq('is_hot', true)
+        .eq('is_active', true)
+        .or(`expires_at.is.null,expires_at.gte.${today}`);
 
       if (error) {
         console.error('Ошибка:', error);
@@ -25,9 +29,13 @@ export default function HotTours() {
         title: item.title,
         country: item.country || 'Не указано',
         price: Number(item.price),
-        startDate: new Date().toISOString(), // фиксированная дата
-        duration: 7, // можно добавить поле в БД позже
+        startDate: new Date().toISOString(),
+        duration: 7,
         description: item.description || '',
+        // Новые поля для TourCard
+        images: item.images || [],
+        cover_image: item.cover_image || item.images?.[0] || '',
+        expires_at: item.expires_at,
       }));
 
       setHotTours(tours);

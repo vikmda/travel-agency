@@ -6,6 +6,7 @@ import {FaPhone, FaMapMarkerAlt} from 'react-icons/fa';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import HotTourDetail from './pages/HotTourDetail';
 
 function App() {
   return (
@@ -76,7 +77,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/tours" element={<Tours />} />
             <Route path="/hot-tours" element={<HotTours />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />{' '}
+            <Route path="/hot-tours/:id" element={<HotTourDetail />} />
             <Route
               path="/admin/dashboard"
               element={
