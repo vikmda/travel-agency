@@ -13,7 +13,7 @@ export default function TourCard({tour}: TourCardProps) {
         <p className="mt-3 text-gray-800 line-clamp-2">{tour.description}</p>
         <div className="mt-4 flex justify-between items-center">
           <span className="text-lg font-semibold text-blue-600">
-            {tour.price.toLocaleString()} ₽
+            {tour.price.toLocaleString()} €
           </span>
           <span className="text-sm text-gray-500">{tour.duration} дней</span>
         </div>
