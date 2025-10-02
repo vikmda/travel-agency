@@ -2,7 +2,11 @@ import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {supabase} from '../lib/supabase';
 
-export default function ProtectedRoute({children}: {children: JSX.Element}) {
+export default function ProtectedRoute({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -27,5 +31,5 @@ export default function ProtectedRoute({children}: {children: JSX.Element}) {
     );
   }
 
-  return children;
+  return <>{children}</>;
 }
