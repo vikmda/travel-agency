@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/tourcard.tsx","./src/lib/supabase.ts","./src/pages/home.tsx","./src/pages/hottours.tsx","./src/pages/tours.tsx","./src/services/api.ts","./src/types/index.ts"],"version":"5.8.3"}
