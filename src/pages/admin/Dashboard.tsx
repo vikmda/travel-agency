@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   };
 
   const handleSave = async () => {
-    let imageUrls: string[] = [];
+    const imageUrls: string[] = [];
 
     // Загрузка фото
     if (images && images.length > 0) {

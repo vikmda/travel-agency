@@ -24,7 +24,7 @@ export default function TourPreviewCard({tour}: TourPreviewCardProps) {
           <h3 className="font-bold text-lg text-gray-900">{tour.title}</h3>
           <p className="text-gray-600">{tour.country}</p>
           <p className="mt-2 text-lg font-semibold text-blue-600">
-            {tour.price.toLocaleString()} ₽
+            {tour.price.toLocaleString()} MDL
           </p>
         </div>
       </div>

@@ -56,7 +56,7 @@ export default function HotTourDetail() {
         )}
         <h1 className="text-3xl font-bold mb-4">{tour.title}</h1>
         <p className="text-xl text-blue-600 font-semibold mb-2">
-          {tour.price.toLocaleString()} ₽
+          {tour.price.toLocaleString()} MDL
         </p>
         <p className="text-gray-600 mb-4">{tour.country}</p>
         <div className="prose max-w-none">

@@ -14,12 +14,6 @@ export default function TourCard({tour}: TourCardProps) {
           alt={tour.title}
           className="w-full h-48 object-cover"
         />
-      ) : tour.images && tour.images.length > 0 ? (
-        <img
-          src={tour.images[0]}
-          alt={tour.title}
-          className="w-full h-48 object-cover"
-        />
       ) : (
         <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
           <span className="text-gray-500">Нет фото</span>
@@ -32,7 +26,7 @@ export default function TourCard({tour}: TourCardProps) {
         <p className="mt-3 text-gray-800 line-clamp-2">{tour.description}</p>
         <div className="mt-4 flex justify-between items-center">
           <span className="text-lg font-semibold text-blue-600">
-            {tour.price.toLocaleString()} ₽
+            {tour.price.toLocaleString()} MDL
           </span>
           <span className="text-sm text-gray-500">{tour.duration} дней</span>
         </div>
