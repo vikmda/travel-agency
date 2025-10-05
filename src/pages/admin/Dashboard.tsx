@@ -57,7 +57,7 @@ export default function AdminDashboard() {
   const handleSave = async () => {
     let imageUrls: string[] = [];
 
-    // Загрузка фото (если есть)
+    // Загрузка фото
     if (images && images.length > 0) {
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
@@ -65,17 +65,18 @@ export default function AdminDashboard() {
         const {error} = await supabase.storage
           .from('tour-images')
           .upload(fileName, file);
+
         if (!error) {
-          const url = supabase.storage
+          // Правильный способ получить публичный URL
+          const {data} = supabase.storage
             .from('tour-images')
-            .getPublicUrl(fileName).data.publicUrl;
-          imageUrls.push(url);
+            .getPublicUrl(fileName);
+          imageUrls.push(data.publicUrl);
         }
       }
     }
 
     const expires_at = isTimerEnabled ? `${expiresAt}T23:59:59` : null;
-    const cover_image = coverImage || imageUrls[0] || '';
 
     if (editingTour) {
       // Обновление существующего
@@ -90,7 +91,7 @@ export default function AdminDashboard() {
             imageUrls.length > 0
               ? [...editingTour.images, ...imageUrls]
               : editingTour.images,
-          cover_image,
+          cover_image: coverImage || imageUrls[0] || '',
           expires_at,
           is_active: isActive,
         })
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
           price: Number(price),
           description,
           images: imageUrls,
-          cover_image,
+          cover_image: imageUrls[0] || '',
           is_hot: true,
           expires_at,
           is_active: isActive,
@@ -211,12 +212,13 @@ export default function AdminDashboard() {
           </div>
           <div>
             <label className="block mb-1 text-sm">
-              Главное фото (URL, опционально)
+              Главное фото (выбор из загруженных)
             </label>
             {editingTour?.images && editingTour.images.length > 0 && (
               <select
                 value={coverImage}
                 onChange={(e) => setCoverImage(e.target.value)}
+                className="w-full p-2 border rounded"
               >
                 <option value="">Автоматически (первое)</option>
                 {editingTour.images.map((url, idx) => (

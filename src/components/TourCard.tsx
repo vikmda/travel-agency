@@ -14,6 +14,12 @@ export default function TourCard({tour}: TourCardProps) {
           alt={tour.title}
           className="w-full h-48 object-cover"
         />
+      ) : tour.images && tour.images.length > 0 ? (
+        <img
+          src={tour.images[0]}
+          alt={tour.title}
+          className="w-full h-48 object-cover"
+        />
       ) : (
         <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
           <span className="text-gray-500">Нет фото</span>
