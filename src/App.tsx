@@ -1,4 +1,4 @@
-import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 import Home from './pages/Home';
 import Tours from './pages/Tours';
 import HotTours from './pages/HotTours';
@@ -7,6 +7,7 @@ import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import HotTourDetail from './pages/HotTourDetail';
+import {supabase} from './lib/supabase';
 
 function App() {
   return (
@@ -16,10 +17,9 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 py-3">
             {/* Логотип по центру, контакты справа */}
             <div className="flex items-start justify-between">
-              {/* Пустой блок слева для баланса */}
               <div className="w-1/4"></div>
 
-              {/* Логотип по центру */}
+              {/* Логотип */}
               <div className="flex-1 flex justify-center">
                 <a href="/" className="focus:outline-none">
                   <img
@@ -30,7 +30,7 @@ function App() {
                 </a>
               </div>
 
-              {/* Контакты справа */}
+              {/* Контакты */}
               <div className="w-1/4 flex flex-col items-end text-right">
                 <a
                   href="tel:+37379555421"
@@ -40,7 +40,7 @@ function App() {
                   <span>+373 79 555 421</span>
                 </a>
                 <a
-                  href="https://www.google.com/maps/dir/?api=1&destination=Alecu+Russo+15,+Chi%C5%9Fin%C4%83u,+Moldova"
+                  href="https://www.google.com/maps/dir/?api=1&destination=Alecu+Russo+15,+Chișinău,+Moldova"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-end gap-2 mt-1 text-blue-700 font-semibold hover:text-blue-900 transition"
@@ -72,13 +72,16 @@ function App() {
             </nav>
           </div>
         </header>
+
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/tours" element={<Tours />} />
             <Route path="/hot-tours" element={<HotTours />} />
-            <Route path="/admin/login" element={<AdminLogin />} />{' '}
             <Route path="/hot-tours/:id" element={<HotTourDetail />} />
+
+            {/* Админка */}
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin/dashboard"
               element={
@@ -87,14 +90,20 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Любой неизвестный путь → главная */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
         <footer className="bg-gray-800 text-white text-center py-6 mt-12">
           <p>
             <button
-              onClick={() => {
-                const isAdmin = window.location.pathname.startsWith('/admin');
-                if (!isAdmin) {
+              onClick={async () => {
+                const {data} = await supabase.auth.getSession();
+                if (data.session) {
+                  window.location.href = '/admin/dashboard';
+                } else {
                   window.location.href = '/admin/login';
                 }
               }}

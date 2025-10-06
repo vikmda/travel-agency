@@ -1,35 +1,52 @@
 import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 import {supabase} from '../lib/supabase';
 
+/**
+ * Компонент защищает маршруты.
+ * Если нет активной сессии — редирект на /admin/login.
+ */
 export default function ProtectedRoute({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: {session},
-      } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/admin/login');
-      }
+    const checkSession = async () => {
+      const {data, error} = await supabase.auth.getSession();
+      if (error) console.error('Ошибка проверки сессии:', error.message);
+      setSession(data.session);
       setLoading(false);
     };
-    checkAuth();
-  }, [navigate]);
+
+    checkSession();
+
+    // Подписываемся на изменения сессии (например, выход)
+    const {
+      data: {subscription},
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Проверка сессии...
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        Проверка авторизации...
       </div>
     );
   }
 
+  // Если нет сессии — отправляем на логин
+  if (!session) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  // Если есть — показываем компонент
   return <>{children}</>;
 }

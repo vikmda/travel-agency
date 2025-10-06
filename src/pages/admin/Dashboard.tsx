@@ -1,15 +1,17 @@
+// Импортируем useState, useEffect, supabase и т.д.
 import {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 
+// Определяем тип тура
 interface HotTour {
   id: string;
   title: string;
   country: string;
   price: number;
   description: string;
-  images: string[];
-  cover_image: string;
+  images: string[]; // Массив URL фото
+  cover_image: string; // URL главного фото
   expires_at: string | null;
   is_active: boolean;
 }
@@ -21,8 +23,8 @@ export default function AdminDashboard() {
   const [country, setCountry] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [images, setImages] = useState<FileList | null>(null);
-  const [coverImage, setCoverImage] = useState('');
+  const [images, setImages] = useState<FileList | null>(null); // Файлы, которые выбрал пользователь
+  const [coverImage, setCoverImage] = useState(''); // URL главного фото
   const [expiresAt, setExpiresAt] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isTimerEnabled, setIsTimerEnabled] = useState(false);
@@ -55,31 +57,39 @@ export default function AdminDashboard() {
   };
 
   const handleSave = async () => {
-    const imageUrls: string[] = [];
+    let imageUrls: string[] = [];
 
-    // Загрузка фото
+    // Загрузка фото (если есть)
     if (images && images.length > 0) {
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
+        // Генерируем уникальное имя файла
         const fileName = `${Date.now()}_${file.name}`;
-        const {error} = await supabase.storage
-          .from('tour-images')
+        // Загружаем файл в бакет tour-images
+        const {error: uploadError} = await supabase.storage
+          .from('tour-images') // ← название бакета
           .upload(fileName, file);
 
-        if (!error) {
-          // Правильный способ получить публичный URL
-          const {data} = supabase.storage
-            .from('tour-images')
-            .getPublicUrl(fileName);
-          imageUrls.push(data.publicUrl);
+        // Если ошибка — пропускаем
+        if (uploadError) {
+          console.error('Ошибка загрузки:', uploadError);
+          continue;
         }
+
+        // Получаем публичный URL файла
+        const {data} = supabase.storage
+          .from('tour-images')
+          .getPublicUrl(fileName);
+        // Добавляем URL в массив
+        imageUrls.push(data.publicUrl);
       }
     }
 
+    // Определяем дату окончания
     const expires_at = isTimerEnabled ? `${expiresAt}T23:59:59` : null;
 
     if (editingTour) {
-      // Обновление существующего
+      // Обновление существующего тура
       await supabase
         .from('hot_tours')
         .update({
@@ -87,25 +97,27 @@ export default function AdminDashboard() {
           country,
           price: Number(price),
           description,
+          // Сохраняем все фото (старые + новые)
           images:
             imageUrls.length > 0
               ? [...editingTour.images, ...imageUrls]
               : editingTour.images,
+          // Главное фото — то, что выбрал пользователь
           cover_image: coverImage || imageUrls[0] || '',
           expires_at,
           is_active: isActive,
         })
         .eq('id', editingTour.id);
     } else {
-      // Создание нового
+      // Создание нового тура
       await supabase.from('hot_tours').insert([
         {
           title,
           country,
           price: Number(price),
           description,
-          images: imageUrls,
-          cover_image: imageUrls[0] || '',
+          images: imageUrls, // Все загруженные фото
+          cover_image: imageUrls[0] || '', // Первое фото — главное
           is_hot: true,
           expires_at,
           is_active: isActive,
@@ -113,7 +125,9 @@ export default function AdminDashboard() {
       ]);
     }
 
+    // Обновляем список туров
     fetchTours();
+    // Сбрасываем форму
     resetForm();
   };
 
@@ -136,6 +150,7 @@ export default function AdminDashboard() {
     setCountry(tour.country);
     setPrice(String(tour.price));
     setDescription(tour.description);
+    // Устанавливаем главное фото
     setCoverImage(tour.cover_image || '');
     setExpiresAt(tour.expires_at ? tour.expires_at.split('T')[0] : '');
     setIsActive(tour.is_active);
@@ -214,6 +229,7 @@ export default function AdminDashboard() {
             <label className="block mb-1 text-sm">
               Главное фото (выбор из загруженных)
             </label>
+            {/* Если есть редактируемый тур и у него есть фото — показываем селект */}
             {editingTour?.images && editingTour.images.length > 0 && (
               <select
                 value={coverImage}
