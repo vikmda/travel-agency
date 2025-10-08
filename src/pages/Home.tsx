@@ -4,9 +4,9 @@ import {supabase} from '../lib/supabase';
 import {Tour} from '../types';
 import TourPreviewCard from '../components/TourPreviewCard';
 import {Link} from 'react-router-dom';
-
 export default function Home() {
   const [currentVideo, setCurrentVideo] = useState<string>('');
+  const [videoLoading, setVideoLoading] = useState(true); // ← состояние загрузки
   const [hotTours, setHotTours] = useState<Tour[]>([]);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function Home() {
 
   return (
     <div className="relative">
-      {/* Фоновое видео */}
+      {/* Контейнер фонового видео */}
       <div className="relative h-[70vh] overflow-hidden">
         {currentVideo && (
           <video
@@ -61,22 +61,35 @@ export default function Home() {
             muted
             playsInline
             className="absolute top-0 left-0 w-full h-full object-cover"
+            onCanPlay={() => setVideoLoading(false)} // ← видео готово к показу
+            onError={() => setVideoLoading(false)} // ← на случай ошибки
           >
             <source src={currentVideo} type="video/mp4" />
             Ваш браузер не поддерживает видео.
           </video>
         )}
 
-        {/* Тёмная подложка */}
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        {/* Иконка загрузки (твоё лого) */}
+        {videoLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 z-[100]">
+            <img
+              src="/loading.gif"
+              alt="Загрузка..."
+              className="w-32 h-32 opacity-90"
+            />
+          </div>
+        )}
 
-        {/* Контент поверх — только форма */}
+        {/* Тёмная подложка поверх видео */}
+        <div className="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+
+        {/* Контент (форма поиска) */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full">
           <AdmiralSearchForm />
         </div>
       </div>
 
-      {/* Горящие туры под формой */}
+      {/* Горящие туры */}
       {hotTours.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">

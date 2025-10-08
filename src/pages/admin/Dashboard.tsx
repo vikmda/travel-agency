@@ -9,19 +9,23 @@ interface HotTour {
   title: string;
   country: string;
   price: number;
+  currency: string; // Добавлено поле для валюты
   description: string;
   images: string[]; // Массив URL фото
   cover_image: string; // URL главного фото
   expires_at: string | null;
   is_active: boolean;
+  // is_hot?: boolean; // Если поле не используется — закомментировано; иначе раскомментируйте
 }
 
 export default function AdminDashboard() {
   const [hotTours, setHotTours] = useState<HotTour[]>([]);
   const [editingTour, setEditingTour] = useState<HotTour | null>(null);
   const [title, setTitle] = useState('');
-  const [country, setCountry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(''); // Для select (включая 'Другое')
+  const [customCountry, setCustomCountry] = useState(''); // Отдельное состояние для кастомной страны
   const [price, setPrice] = useState('');
+  const [currency, setCurrency] = useState('$'); // Добавлено состояние
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<FileList | null>(null); // Файлы, которые выбрал пользователь
   const [coverImage, setCoverImage] = useState(''); // URL главного фото
@@ -57,6 +61,14 @@ export default function AdminDashboard() {
   };
 
   const handleSave = async () => {
+    // Валидация страны
+    const finalCountry =
+      selectedCountry === 'Другое' ? customCountry : selectedCountry;
+    if (!finalCountry) {
+      alert('Выберите или введите страну!');
+      return;
+    }
+
     let imageUrls: string[] = [];
 
     // Загрузка фото (если есть)
@@ -77,11 +89,11 @@ export default function AdminDashboard() {
         }
 
         // Получаем публичный URL файла
-        const {data} = supabase.storage
+        const {data: urlData} = supabase.storage
           .from('tour-images')
           .getPublicUrl(fileName);
         // Добавляем URL в массив
-        imageUrls.push(data.publicUrl);
+        imageUrls.push(urlData.publicUrl);
       }
     }
 
@@ -90,12 +102,13 @@ export default function AdminDashboard() {
 
     if (editingTour) {
       // Обновление существующего тура
-      await supabase
+      const {error: updateError} = await supabase
         .from('hot_tours')
         .update({
           title,
-          country,
+          country: finalCountry, // Используем финальную страну
           price: Number(price),
+          currency, // Добавлено сохранение валюты
           description,
           // Сохраняем все фото (старые + новые)
           images:
@@ -108,21 +121,32 @@ export default function AdminDashboard() {
           is_active: isActive,
         })
         .eq('id', editingTour.id);
+
+      if (updateError) {
+        console.error('Ошибка обновления:', updateError);
+        return;
+      }
     } else {
       // Создание нового тура
-      await supabase.from('hot_tours').insert([
+      const {error: insertError} = await supabase.from('hot_tours').insert([
         {
           title,
-          country,
+          country: finalCountry, // Используем финальную страну
           price: Number(price),
+          currency, // Добавлено сохранение валюты
           description,
           images: imageUrls, // Все загруженные фото
           cover_image: imageUrls[0] || '', // Первое фото — главное
-          is_hot: true,
+          // is_hot: true, // Закомментировано, если не нужно
           expires_at,
           is_active: isActive,
         },
       ]);
+
+      if (insertError) {
+        console.error('Ошибка создания:', insertError);
+        return;
+      }
     }
 
     // Обновляем список туров
@@ -134,8 +158,10 @@ export default function AdminDashboard() {
   const resetForm = () => {
     setEditingTour(null);
     setTitle('');
-    setCountry('');
+    setSelectedCountry('');
+    setCustomCountry(''); // Добавлен сброс
     setPrice('');
+    setCurrency('$'); // Добавлен сброс валюты
     setDescription('');
     setImages(null);
     setCoverImage('');
@@ -147,10 +173,18 @@ export default function AdminDashboard() {
   const handleEdit = (tour: HotTour) => {
     setEditingTour(tour);
     setTitle(tour.title);
-    setCountry(tour.country);
+    // Логика для страны
+    const presetCountries = ['Турция', 'Болгария', 'Греция', 'Египет'];
+    if (presetCountries.includes(tour.country)) {
+      setSelectedCountry(tour.country);
+      setCustomCountry('');
+    } else {
+      setSelectedCountry('Другое');
+      setCustomCountry(tour.country);
+    }
     setPrice(String(tour.price));
+    setCurrency(tour.currency || '$'); // Добавлен сброс для редактирования
     setDescription(tour.description);
-    // Устанавливаем главное фото
     setCoverImage(tour.cover_image || '');
     setExpiresAt(tour.expires_at ? tour.expires_at.split('T')[0] : '');
     setIsActive(tour.is_active);
@@ -159,8 +193,10 @@ export default function AdminDashboard() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Удалить тур?')) {
-      await supabase.from('hot_tours').delete().eq('id', id);
-      fetchTours();
+      const {error} = await supabase.from('hot_tours').delete().eq('id', id);
+      if (!error) {
+        fetchTours();
+      }
     }
   };
 
@@ -176,27 +212,71 @@ export default function AdminDashboard() {
             : 'Добавить новый тур'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Название *"
-            className="p-2 border rounded"
-            required
-          />
-          <input
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder="Страна"
-            className="p-2 border rounded"
-          />
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="Цена *"
-            className="p-2 border rounded"
-            required
-          />
+          <div>
+            <label className="block mb-1 text-sm">Название *</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Название"
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm">Страна *</label>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Выберите страну...</option>
+              <option value="Турция">Турция</option>
+              <option value="Болгария">Болгария</option>
+              <option value="Греция">Греция</option>
+              <option value="Египет">Египет</option>
+              <option value="Другое">Другое</option>
+            </select>
+            {selectedCountry === 'Другое' && (
+              <input
+                type="text"
+                placeholder="Введите страну"
+                value={customCountry}
+                onChange={(e) => setCustomCountry(e.target.value)}
+                className="mt-2 w-full p-2 border rounded"
+              />
+            )}
+          </div>
+
+          {/* Внутренний grid только для цены и валюты */}
+          <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-sm">Цена *</label>
+                <input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Сумма"
+                  className="w-full p-2 border rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm">Валюта</label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="$">$</option>
+                  <option value="MDL">MDL</option>
+                  <option value="€">€</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block mb-1 text-sm">
               <input
@@ -221,6 +301,7 @@ export default function AdminDashboard() {
             <input
               type="file"
               multiple
+              accept="image/*"
               onChange={(e) => setImages(e.target.files)}
               className="p-1 border rounded"
             />
@@ -265,7 +346,7 @@ export default function AdminDashboard() {
               Активен
             </label>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 md:col-span-2">
             <button
               onClick={handleSave}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -294,7 +375,8 @@ export default function AdminDashboard() {
               className="p-3 bg-white border rounded flex justify-between items-center"
             >
               <div>
-                <strong>{tour.title}</strong> — {tour.country} — {tour.price} ₽
+                <strong>{tour.title}</strong> — {tour.country} — {tour.price}{' '}
+                {tour.currency}
                 {tour.expires_at && (
                   <span className="ml-2 text-sm text-red-600">
                     До {new Date(tour.expires_at).toLocaleDateString()}
@@ -306,10 +388,10 @@ export default function AdminDashboard() {
                   </span>
                 )}
               </div>
-              <div>
+              <div className="space-x-2">
                 <button
                   onClick={() => handleEdit(tour)}
-                  className="text-blue-600 hover:text-blue-800 mr-3"
+                  className="text-blue-600 hover:text-blue-800"
                 >
                   Изменить
                 </button>
